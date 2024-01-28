@@ -14,8 +14,7 @@ func NewParcelStore(db *sql.DB) ParcelStore {
 }
 
 func (s ParcelStore) Add(p Parcel) (int, error) {
-	answer, err := s.db.QueryRow("INSERT INTO parcel (client, status, address, created_at) VALUES (?, ?, ?, ?)", p.Client, p.Status, p.Address, p.CreatedAt) // добавляем новую строку в таблицу
-	defer answer.Close()                                                                                                                                     // закроем ресурс после использования
+	answer, err := s.db.Exec("INSERT INTO parcel (client, status, address, created_at) VALUES (?, ?, ?, ?)", p.Client, p.Status, p.Address, p.CreatedAt) // добавляем новую строку в таблицу
 	if err != nil {
 		return 0, err // возвращаем ошибку
 	}
@@ -23,12 +22,12 @@ func (s ParcelStore) Add(p Parcel) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	return lastID, nil
+	return int(lastID), nil
 }
 
 func (s ParcelStore) Get(number int) (Parcel, error) {
-	answer, err := s.db.QueryRow("SELECT * FROM parcel WHERE number = ?", number) // запрос одной строки
-	defer answer.Close()                                                          // закроем ресурс после использования перед выходом из функции
+	answer := s.db.QueryRow("SELECT * FROM parcel WHERE number = ?", number) // запрос одной строки
+	err := answer.Err()                                                      // возвращаем ошибку
 	if err != nil {
 		return Parcel{}, err // возвращаем ошибку
 	}
@@ -42,7 +41,6 @@ func (s ParcelStore) Get(number int) (Parcel, error) {
 
 func (s ParcelStore) GetByClient(client int) ([]Parcel, error) {
 	answer, err := s.db.Query("SELECT * FROM parcel WHERE client = ?", client) // запрос множества строк
-	defer answer.Close()                                                       // закроем ресурс после использования
 	if err != nil {
 		return nil, err // возвращаем ошибку
 	}
